@@ -45,7 +45,7 @@ EOF
 
 # Defaults
 ELASTICSEARCH="http://localhost:9200"
-DATE=$(date  --date="3 months ago" +"%Y%m%d")
+DATE=$(date  --date="10 days ago" +"%Y%m%d")
 INDEX_NAME="logstash"
 LOGFILE=/dev/null
 
@@ -93,7 +93,7 @@ fi
 INDICES_TEXT=`curl -s "$ELASTICSEARCH/_cat/indices?v" | awk '/'$INDEX_NAME'/{match($0, /[:blank]*('$INDEX_NAME'.[^ ]+)[:blank]*/, m); print m[1];}' | sort -r`
 
 if [ -z "$INDICES_TEXT" ]; then
-  echo "No indices returned containing '$GREP' from $ELASTICSEARCH."
+  echo "No indices returned containing '$INDEX_NAME' from $ELASTICSEARCH."
   exit 1
 fi
 
@@ -109,8 +109,9 @@ declare -a INDEX=($INDICES_TEXT)
     if [ -n "$index" ]; then
         INDEX_DATE=$(echo $index | sed -n 's/.*\([0-9]\{4\}\.[0-9]\{2\}\.[0-9]\{2\}\).*/\1/p'| sed 's/\./-/g')
         if [ $(date  -d $DATE +"%Y%m%d") -ge $(date -d $INDEX_DATE +"%Y%m%d")  ]; then
-            echo `date "+[%Y-%m-%d %H:%M] "`" Deleting index: $index." >> $LOGFILE
-            curl -s -XDELETE "$ELASTICSEARCH/$index/" >> $LOGFILE
+            echo `date '+%F %X'` curl -s -XDELETE "$ELASTICSEARCH/$index/" START >> $LOGFILE 2>&1
+            curl -s -XDELETE "$ELASTICSEARCH/$index/" >> $LOGFILE 2>&1
+            echo -e "\n" `date '+%F %X'` curl -s -XDELETE "$ELASTICSEARCH/$index/" END >> $LOGFILE 2>&1
         fi
     fi
   done
